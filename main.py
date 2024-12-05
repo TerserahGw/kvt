@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from gradio_client import Client
 from io import BytesIO
+from PIL import Image
 
 app = FastAPI()
 
@@ -23,10 +24,16 @@ def generate_image_with_kivotos(prompt: str) -> BytesIO:
         add_quality_tags=True,
         api_name="/run"
     )
-
-    image_io = BytesIO(result)
-    image_io.seek(0)
-    return image_io
+    if isinstance(result, str):
+        with open(result, "rb") as file:
+            image_bytes = file.read()
+    elif isinstance(result, Image.Image):
+        image_io = BytesIO()
+        result.save(image_io, format="PNG")
+        image_bytes = image_io.getvalue()
+    else:
+        raise ValueError("Unexpected result type from Gradio API")
+    return BytesIO(image_bytes)
 
 @app.get("/kivotos")
 async def kivotos_endpoint(text: str = Query(...)):
