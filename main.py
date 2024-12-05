@@ -8,6 +8,9 @@ app = FastAPI()
 
 def generate_image_with_kivotos(prompt: str) -> BytesIO:
     client = Client("Linaqruf/kivotos-xl-2.0")
+    
+    print(f"Generating image for prompt: {prompt}")
+
     result = client.predict(
         prompt=prompt,
         negative_prompt="nsfw, (low quality, worst quality:1.2), 3d, watermark, signature, ugly, poorly drawn",
@@ -37,7 +40,7 @@ def generate_image_with_kivotos(prompt: str) -> BytesIO:
         raise HTTPException(status_code=500, detail="Image not found or invalid path")
 
 @app.get("/kivotos")
-async def kivotos_endpoint(text: str = Query(...)):
+def kivotos_endpoint(text: str = Query(...)):
     try:
         image_data = generate_image_with_kivotos(text)
         return StreamingResponse(image_data, media_type="image/png", headers={"Content-Disposition": "inline; filename=output.png"})
