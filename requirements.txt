@@ -1,4 +1,4 @@
-fastapi==0.95.0
-uvicorn==0.22.0
+fastapi
+uvicorn
 gradio
-pillow==9.3.0
+pillow
