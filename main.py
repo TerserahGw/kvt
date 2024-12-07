@@ -6,6 +6,10 @@ import os
 
 app = FastAPI()
 
+@app.get("/")
+def read_root():
+    return {"status": "Server is running coba /kivotos?text="}
+
 def generate_image_with_kivotos(prompt: str) -> BytesIO:
     client = Client("Linaqruf/kivotos-xl-2.0")
     
@@ -47,6 +51,3 @@ def kivotos_endpoint(text: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
