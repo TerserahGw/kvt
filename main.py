@@ -1,13 +1,14 @@
-from flask import Flask, request, send_file, jsonify
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import StreamingResponse
 from gradio_client import Client
 from io import BytesIO
 import os
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route("/")
+@app.get("/")
 def read_root():
-    return jsonify({"status": "Server is running coba /kivotos?text="})
+    return {"status": "Server is running coba /kivotos?text="}
 
 def generate_image_with_kivotos(prompt: str) -> BytesIO:
     client = Client("Linaqruf/kivotos-xl-2.0")
@@ -40,19 +41,18 @@ def generate_image_with_kivotos(prompt: str) -> BytesIO:
             image_bytes = file.read()
         return BytesIO(image_bytes)
     else:
-        return None
+        raise HTTPException(status_code=500, detail="Image not found or invalid path")
 
-@app.route("/kivotos", methods=["GET"])
-def kivotos_endpoint():
-    text = request.args.get('text')
-    if not text:
-        return jsonify({"error": "Missing 'text' parameter"}), 400
-    
-    image_data = generate_image_with_kivotos(text)
-    if image_data:
-        return send_file(image_data, mimetype='image/png', as_attachment=True, download_name="output.png")
-    else:
-        return jsonify({"error": "Failed to generate image"}), 500
+@app.get("/kivotos")
+def kivotos_endpoint(text: str = Query(...)):
+    try:
+        image_data = generate_image_with_kivotos(text)
+        return StreamingResponse(image_data, media_type="image/png", headers={"Content-Disposition": "inline; filename=output.png"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    import uvicorn
+    port = int(os.getenv("PORT", 2020))
+    print(f"Server is starting on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
